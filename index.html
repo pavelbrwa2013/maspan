@@ -63,13 +63,9 @@
 
     .post img { width: 100%; }
 
-    .post .info {
-        padding: 10px;
-    }
+    .post .info { padding: 10px; }
 
-    .username {
-        font-weight: bold;
-    }
+    .username { font-weight: bold; }
 </style>
 </head>
 
@@ -125,16 +121,32 @@
     <button onclick="addPost()">Post</button>
 </div>
 
+<!-- 💬 CHAT PAGE (ADDED) -->
+<div id="chatPage" class="page">
+    <div class="topbar">Chat</div>
+
+    <iframe src="https://www5.cbox.ws/box/?boxid=962826&boxtag=rXYmug"
+    width="100%" height="450"
+    allowtransparency="yes"
+    allow="autoplay"
+    frameborder="0"
+    marginheight="0"
+    marginwidth="0"
+    scrolling="auto">
+    </iframe>
+</div>
+
 <!-- NAV -->
 <div id="nav" class="navbar" style="display:none;">
     <div onclick="showPage('feedPage')">🏠</div>
     <div onclick="showPage('addPage')">➕</div>
     <div onclick="showPage('profilePage')">👤</div>
+    <div onclick="showPage('chatPage')">💬</div>
 </div>
 
 <script>
 
-/* ================= NAV ================= */
+/* NAV */
 function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(page).classList.add('active');
@@ -143,7 +155,7 @@ function showPage(page) {
     if (page === 'profilePage') loadMyPosts();
 }
 
-/* ================= AUTH ================= */
+/* AUTH */
 function signup() {
     let u = newUser.value;
     let p = newPass.value;
@@ -171,7 +183,7 @@ function login() {
     } else alert("Wrong login");
 }
 
-/* ================= POSTS ================= */
+/* POSTS */
 const fakePosts = [
     {
         id: 1,
@@ -196,7 +208,6 @@ const fakePosts = [
 ];
 
 let userPosts = JSON.parse(localStorage.getItem("posts")) || [];
-userPosts = userPosts.map(p => ({ comments: [], ...p }));
 
 function savePosts() {
     localStorage.setItem("posts", JSON.stringify(userPosts));
@@ -206,29 +217,7 @@ function getAllPosts() {
     return [...userPosts, ...fakePosts];
 }
 
-/* ================= TIME ================= */
-function timeAgo(timestamp) {
-    let seconds = Math.floor((Date.now() - timestamp) / 1000);
-
-    let interval = Math.floor(seconds / 31536000);
-    if (interval > 1) return interval + "y ago";
-
-    interval = Math.floor(seconds / 2592000);
-    if (interval > 1) return interval + "mo ago";
-
-    interval = Math.floor(seconds / 86400);
-    if (interval > 1) return interval + "d ago";
-
-    interval = Math.floor(seconds / 3600);
-    if (interval > 1) return interval + "h ago";
-
-    interval = Math.floor(seconds / 60);
-    if (interval > 1) return interval + "m ago";
-
-    return "just now";
-}
-
-/* ================= ADD POST ================= */
+/* ADD POST */
 function addPost() {
     let file = postFile.files[0];
     let cap = postCaption.value;
@@ -261,110 +250,31 @@ function addPost() {
     reader.readAsDataURL(file);
 }
 
-/* ================= LIKE POST ================= */
-function likePost(id) {
-    let post = userPosts.find(p => p.id === id);
-    if (!post) return;
-
-    post.likes++;
-    savePosts();
-    loadPosts();
-}
-
-/* ================= COMMENTS ================= */
-function addComment(id, inputId) {
-    let text = document.getElementById(inputId).value;
-    if (!text) return;
-
-    let post = userPosts.find(p => p.id === id);
-    if (!post) return;
-
-    post.comments.push({
-        id: Date.now(),
-        user: localStorage.getItem("user"),
-        text: text,
-        likes: 0
-    });
-
-    savePosts();
-    loadPosts();
-}
-
-function likeComment(postId, commentId) {
-    let post = userPosts.find(p => p.id === postId);
-    if (!post) return;
-
-    let comment = post.comments.find(c => c.id === commentId);
-    if (!comment) return;
-
-    comment.likes++;
-    savePosts();
-    loadPosts();
-}
-
-/* ================= FEED ================= */
+/* FEED */
 function loadPosts() {
     let box = document.getElementById("posts");
     box.innerHTML = "";
 
-    let all = getAllPosts();
-
-    all.forEach(p => {
-
-        let commentHTML = "";
-
-        (p.comments || []).forEach(c => {
-            commentHTML += `
-                <div style="font-size:14px; margin-left:10px;">
-                    <b>@${c.user}</b> ${c.text}
-                    <span onclick="likeComment(${p.id}, ${c.id})"
-                          style="cursor:pointer; color:red;">
-                        ❤️ ${c.likes}
-                    </span>
-                </div>`;
-        });
-
-        let inputId = "cmt_" + p.id;
-
+    getAllPosts().forEach(p => {
         box.innerHTML += `
         <div class="post">
-
             <div class="info">
-                <img src="${p.avatar}"
-                     style="width:30px;height:30px;border-radius:50%;vertical-align:middle;">
+                <img src="${p.avatar}" style="width:30px;height:30px;border-radius:50%;">
                 <span class="username">@${p.user}</span>
-                <span style="color:gray;font-size:12px;">
-                    · ${timeAgo(p.time)}
-                </span>
             </div>
 
             <img src="${p.img}">
 
             <div class="info">
-
-                ❤️ <span onclick="likePost(${p.id})" style="cursor:pointer">
-                    ${p.likes} likes
-                </span>
-
+                ❤️ ${p.likes} likes
                 <br><br>
-
-                <span class="username">@${p.user}</span> ${p.cap}
-
-                <br><br>
-
-                ${commentHTML}
-
-                <input id="${inputId}" placeholder="Write a comment...">
-                <button onclick="addComment(${p.id}, '${inputId}')">
-                    Comment
-                </button>
-
+                ${p.cap}
             </div>
         </div>`;
     });
 }
 
-/* ================= PROFILE ================= */
+/* PROFILE */
 function loadMyPosts() {
     let me = localStorage.getItem("user");
     let box = document.getElementById("myPosts");
