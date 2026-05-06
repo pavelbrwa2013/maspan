@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Maspan</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<style>
+    body { margin: 0; font-family: Arial, sans-serif; background: #fafafa; }
+
+    .page { display: none; padding: 20px; }
+    .active { display: block; }
+
+    .topbar {
+        background: white;
+        padding: 15px;
+        font-size: 22px;
+        font-weight: bold;
+        border-bottom: 1px solid #ddd;
+        text-align: center;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
+
+    .navbar {
+        position: fixed;
+        bottom: 0; left: 0; right: 0;
+        background: #fff;
+        border-top: 1px solid #ddd;
+        display: flex;
+        justify-content: space-around;
+        padding: 10px 0;
+        z-index: 10;
+    }
+
+    button {
+        padding: 10px;
+        width: 100%;
+        background: #3897f0;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        font-size: 16px;
+        cursor: pointer;
+        margin-top: 5px;
+    }
+
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+
+    .post {
+        background: white;
+        border: 1px solid #ddd;
+        margin-bottom: 20px;
+        border-radius: 5px;
+    }
+
+    .post img { width: 100%; }
+
+    .post .info {
+        padding: 10px;
+    }
+
+    .username {
+        font-weight: bold;
+    }
+</style>
+</head>
+
+<body>
+
+<!-- LOGIN -->
+<div id="loginPage" class="page active">
+    <h2 style="text-align:center; margin-top:60px;">Maspan</h2>
+
+    <input id="loginUser" placeholder="Username">
+    <input id="loginPass" type="password" placeholder="Password">
+
+    <button onclick="login()">Login</button>
+
+    <p style="text-align:center;">
+        No account?
+        <span onclick="showPage('signupPage')" style="color:#3897f0; cursor:pointer;">
+            Sign Up
+        </span>
+    </p>
+</div>
+
+<!-- SIGNUP -->
+<div id="signupPage" class="page">
+    <h2 style="text-align:center; margin-top:60px;">Create Account</h2>
+
+    <input id="newUser" placeholder="Username">
+    <input id="newPass" type="password" placeholder="Password">
+
+    <button onclick="signup()">Sign Up</button>
+</div>
+
+<!-- FEED -->
+<div id="feedPage" class="page">
+    <div class="topbar">Maspan</div>
+    <div id="posts"></div>
+</div>
+
+<!-- PROFILE -->
+<div id="profilePage" class="page">
+    <div class="topbar">Profile</div>
+    <h2 id="profileName"></h2>
+    <div id="myPosts"></div>
+</div>
+
+<!-- ADD POST -->
+<div id="addPage" class="page">
+    <div class="topbar">Add Post</div>
+
+    <input type="file" id="postFile" accept="image/*">
+    <input id="postCaption" placeholder="Write a caption...">
+
+    <button onclick="addPost()">Post</button>
+</div>
+
+<!-- NAV -->
+<div id="nav" class="navbar" style="display:none;">
+    <div onclick="showPage('feedPage')">🏠</div>
+    <div onclick="showPage('addPage')">➕</div>
+    <div onclick="showPage('profilePage')">👤</div>
+</div>
+
+<script>
+
+/* ================= NAV ================= */
+function showPage(page) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.getElementById(page).classList.add('active');
+
+    if (page === 'feedPage') loadPosts();
+    if (page === 'profilePage') loadMyPosts();
+}
+
+/* ================= AUTH ================= */
+function signup() {
+    let u = newUser.value;
+    let p = newPass.value;
+
+    if (!u || !p) return alert("Fill all fields");
+
+    let avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${u}`;
+
+    localStorage.setItem("user", u);
+    localStorage.setItem("pass", p);
+    localStorage.setItem("avatar", avatar);
+
+    alert("Account created");
+    showPage('loginPage');
+}
+
+function login() {
+    if (loginUser.value === localStorage.getItem("user") &&
+        loginPass.value === localStorage.getItem("pass")) {
+
+        profileName.innerText = loginUser.value;
+        nav.style.display = "flex";
+        showPage('feedPage');
+
+    } else alert("Wrong login");
+}
+
+/* ================= POSTS ================= */
+const fakePosts = [
+    {
+        id: 1,
+        user:"lara",
+        avatar:"https://api.dicebear.com/7.x/avataaars/svg?seed=lara",
+        img:"https://picsum.photos/500/300?random=1",
+        cap:"Beautiful day!",
+        likes:12,
+        comments:[],
+        time: Date.now() - 7200000
+    },
+    {
+        id: 2,
+        user:"omar",
+        avatar:"https://api.dicebear.com/7.x/avataaars/svg?seed=omar",
+        img:"https://picsum.photos/500/300?random=2",
+        cap:"Hello Maspan",
+        likes:5,
+        comments:[],
+        time: Date.now() - 3600000
+    }
+];
+
+let userPosts = JSON.parse(localStorage.getItem("posts")) || [];
+userPosts = userPosts.map(p => ({ comments: [], ...p }));
+
+function savePosts() {
+    localStorage.setItem("posts", JSON.stringify(userPosts));
+}
+
+function getAllPosts() {
+    return [...userPosts, ...fakePosts];
+}
+
+/* ================= TIME ================= */
+function timeAgo(timestamp) {
+    let seconds = Math.floor((Date.now() - timestamp) / 1000);
+
+    let interval = Math.floor(seconds / 31536000);
+    if (interval > 1) return interval + "y ago";
+
+    interval = Math.floor(seconds / 2592000);
+    if (interval > 1) return interval + "mo ago";
+
+    interval = Math.floor(seconds / 86400);
+    if (interval > 1) return interval + "d ago";
+
+    interval = Math.floor(seconds / 3600);
+    if (interval > 1) return interval + "h ago";
+
+    interval = Math.floor(seconds / 60);
+    if (interval > 1) return interval + "m ago";
+
+    return "just now";
+}
+
+/* ================= ADD POST ================= */
+function addPost() {
+    let file = postFile.files[0];
+    let cap = postCaption.value;
+    let user = localStorage.getItem("user");
+
+    if (!file || !cap) return alert("Pick image + caption");
+
+    let reader = new FileReader();
+    reader.onload = function(e) {
+
+        userPosts.unshift({
+            id: Date.now(),
+            user: user,
+            avatar: localStorage.getItem("avatar"),
+            img: e.target.result,
+            cap: cap,
+            likes: 0,
+            comments: [],
+            time: Date.now()
+        });
+
+        savePosts();
+
+        postCaption.value = "";
+        postFile.value = "";
+
+        showPage('feedPage');
+    };
+
+    reader.readAsDataURL(file);
+}
+
+/* ================= LIKE POST ================= */
+function likePost(id) {
+    let post = userPosts.find(p => p.id === id);
+    if (!post) return;
+
+    post.likes++;
+    savePosts();
+    loadPosts();
+}
+
+/* ================= COMMENTS ================= */
+function addComment(id, inputId) {
+    let text = document.getElementById(inputId).value;
+    if (!text) return;
+
+    let post = userPosts.find(p => p.id === id);
+    if (!post) return;
+
+    post.comments.push({
+        id: Date.now(),
+        user: localStorage.getItem("user"),
+        text: text,
+        likes: 0
+    });
+
+    savePosts();
+    loadPosts();
+}
+
+function likeComment(postId, commentId) {
+    let post = userPosts.find(p => p.id === postId);
+    if (!post) return;
+
+    let comment = post.comments.find(c => c.id === commentId);
+    if (!comment) return;
+
+    comment.likes++;
+    savePosts();
+    loadPosts();
+}
+
+/* ================= FEED ================= */
+function loadPosts() {
+    let box = document.getElementById("posts");
+    box.innerHTML = "";
+
+    let all = getAllPosts();
+
+    all.forEach(p => {
+
+        let commentHTML = "";
+
+        (p.comments || []).forEach(c => {
+            commentHTML += `
+                <div style="font-size:14px; margin-left:10px;">
+                    <b>@${c.user}</b> ${c.text}
+                    <span onclick="likeComment(${p.id}, ${c.id})"
+                          style="cursor:pointer; color:red;">
+                        ❤️ ${c.likes}
+                    </span>
+                </div>`;
+        });
+
+        let inputId = "cmt_" + p.id;
+
+        box.innerHTML += `
+        <div class="post">
+
+            <div class="info">
+                <img src="${p.avatar}"
+                     style="width:30px;height:30px;border-radius:50%;vertical-align:middle;">
+                <span class="username">@${p.user}</span>
+                <span style="color:gray;font-size:12px;">
+                    · ${timeAgo(p.time)}
+                </span>
+            </div>
+
+            <img src="${p.img}">
+
+            <div class="info">
+
+                ❤️ <span onclick="likePost(${p.id})" style="cursor:pointer">
+                    ${p.likes} likes
+                </span>
+
+                <br><br>
+
+                <span class="username">@${p.user}</span> ${p.cap}
+
+                <br><br>
+
+                ${commentHTML}
+
+                <input id="${inputId}" placeholder="Write a comment...">
+                <button onclick="addComment(${p.id}, '${inputId}')">
+                    Comment
+                </button>
+
+            </div>
+        </div>`;
+    });
+}
+
+/* ================= PROFILE ================= */
+function loadMyPosts() {
+    let me = localStorage.getItem("user");
+    let box = document.getElementById("myPosts");
+    box.innerHTML = "";
+
+    userPosts.filter(p => p.user === me).forEach(p => {
+        box.innerHTML += `
+        <div class="post">
+            <img src="${p.img}">
+            <div class="info">${p.cap}</div>
+        </div>`;
+    });
+}
+
+</script>
+
+</body>
+</html>
