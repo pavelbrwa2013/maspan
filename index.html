@@ -1,100 +1,49 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Maspan</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta charset="UTF-8">
+    <title>Maspan</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <!-- Supabase Library -->
+    <script src="https://jsdelivr.net"></script>
 
-<style>
-    body { margin: 0; font-family: Arial, sans-serif; background: #fafafa; }
+    <style>
+        body { margin: 0; font-family: Arial, sans-serif; background: #fafafa; padding-bottom: 60px; }
+        .page { display: none; padding: 20px; }
+        .active { display: block; }
+        .topbar { background: white; padding: 15px; font-size: 22px; font-weight: bold; border-bottom: 1px solid #ddd; text-align: center; position: sticky; top: 0; z-index: 10; }
+        .navbar { position: fixed; bottom: 0; left: 0; right: 0; background: #fff; border-top: 1px solid #ddd; display: flex; justify-content: space-around; padding: 10px 0; z-index: 10; }
+        button { padding: 10px; width: 100%; background: #3897f0; color: white; border: none; border-radius: 5px; font-size: 16px; cursor: pointer; margin-top: 5px; }
+        input { width: 100%; padding: 10px; margin: 10px 0; border: 1px solid #ccc; border-radius: 5px; box-sizing: border-box; }
+        .post { background: white; border: 1px solid #ddd; margin-bottom: 20px; border-radius: 5px; overflow: hidden; }
+        .post img { width: 100%; display: block; }
+        .post .info { padding: 10px; }
+        .username { font-weight: bold; }
 
-    .page { display: none; padding: 20px; }
-    .active { display: block; }
-
-    .topbar {
-        background: white;
-        padding: 15px;
-        font-size: 22px;
-        font-weight: bold;
-        border-bottom: 1px solid #ddd;
-        text-align: center;
-        position: sticky;
-        top: 0;
-        z-index: 10;
-    }
-
-    .navbar {
-        position: fixed;
-        bottom: 0; left: 0; right: 0;
-        background: #fff;
-        border-top: 1px solid #ddd;
-        display: flex;
-        justify-content: space-around;
-        padding: 10px 0;
-        z-index: 10;
-    }
-
-    button {
-        padding: 10px;
-        width: 100%;
-        background: #3897f0;
-        color: white;
-        border: none;
-        border-radius: 5px;
-        font-size: 16px;
-        cursor: pointer;
-        margin-top: 5px;
-    }
-
-    input {
-        width: 100%;
-        padding: 10px;
-        margin: 10px 0;
-        border: 1px solid #ccc;
-        border-radius: 5px;
-    }
-
-    .post {
-        background: white;
-        border: 1px solid #ddd;
-        margin-bottom: 20px;
-        border-radius: 5px;
-    }
-
-    .post img { width: 100%; }
-
-    .post .info { padding: 10px; }
-
-    .username { font-weight: bold; }
-</style>
+        /* Chat Specific Styles */
+        #chatBox { height: 60vh; overflow-y: auto; background: #fff; padding: 10px; border: 1px solid #ddd; margin-bottom: 10px; display: flex; flex-direction: column; border-radius: 5px; }
+        .msg { padding: 8px 12px; border-radius: 15px; margin: 5px; max-width: 75%; word-wrap: break-word; position: relative; }
+        .msg.me { align-self: flex-end; background: #3897f0; color: white; }
+        .msg.them { align-self: flex-start; background: #efefef; color: black; }
+        .msg small { display: block; font-size: 10px; margin-bottom: 3px; opacity: 0.8; }
+    </style>
 </head>
-
 <body>
 
 <!-- LOGIN -->
 <div id="loginPage" class="page active">
     <h2 style="text-align:center; margin-top:60px;">Maspan</h2>
-
     <input id="loginUser" placeholder="Username">
     <input id="loginPass" type="password" placeholder="Password">
-
     <button onclick="login()">Login</button>
-
-    <p style="text-align:center;">
-        No account?
-        <span onclick="showPage('signupPage')" style="color:#3897f0; cursor:pointer;">
-            Sign Up
-        </span>
-    </p>
+    <p style="text-align:center;">No account? <span onclick="showPage('signupPage')" style="color:#3897f0; cursor:pointer;">Sign Up</span></p>
 </div>
 
 <!-- SIGNUP -->
 <div id="signupPage" class="page">
     <h2 style="text-align:center; margin-top:60px;">Create Account</h2>
-
     <input id="newUser" placeholder="Username">
     <input id="newPass" type="password" placeholder="Password">
-
     <button onclick="signup()">Sign Up</button>
 </div>
 
@@ -107,33 +56,26 @@
 <!-- PROFILE -->
 <div id="profilePage" class="page">
     <div class="topbar">Profile</div>
-    <h2 id="profileName"></h2>
+    <h2 id="profileName" style="text-align: center;"></h2>
     <div id="myPosts"></div>
 </div>
 
 <!-- ADD POST -->
 <div id="addPage" class="page">
     <div class="topbar">Add Post</div>
-
     <input type="file" id="postFile" accept="image/*">
     <input id="postCaption" placeholder="Write a caption...">
-
     <button onclick="addPost()">Post</button>
 </div>
 
-<!-- 💬 CHAT PAGE (ADDED) -->
+<!-- CHAT PAGE -->
 <div id="chatPage" class="page">
-    <div class="topbar">Chat</div>
-
-    <iframe src="https://www5.cbox.ws/box/?boxid=962826&boxtag=rXYmug"
-    width="100%" height="450"
-    allowtransparency="yes"
-    allow="autoplay"
-    frameborder="0"
-    marginheight="0"
-    marginwidth="0"
-    scrolling="auto">
-    </iframe>
+    <div class="topbar">Community Chat</div>
+    <div id="chatBox"></div>
+    <div style="display: flex; gap: 5px;">
+        <input id="chatInput" placeholder="Type a message..." style="margin: 0;">
+        <button onclick="sendChatMessage()" style="width: 80px; margin: 0;">Send</button>
+    </div>
 </div>
 
 <!-- NAV -->
@@ -145,151 +87,150 @@
 </div>
 
 <script>
+/* CONFIGURATION - REPLACE THESE */
+const SB_URL = 'YOUR_SUPABASE_URL';
+const SB_KEY = 'YOUR_SUPABASE_ANON_KEY';
+const _supabase = supabase.createClient(SB_URL, SB_KEY);
 
-/* NAV */
+/* NAVIGATION */
 function showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.getElementById(page).classList.add('active');
 
     if (page === 'feedPage') loadPosts();
     if (page === 'profilePage') loadMyPosts();
+    if (page === 'chatPage') initChat();
 }
 
 /* AUTH */
 function signup() {
     let u = newUser.value;
     let p = newPass.value;
-
     if (!u || !p) return alert("Fill all fields");
-
-    let avatar = `https://api.dicebear.com/7.x/avataaars/svg?seed=${u}`;
-
+    let avatar = `https://dicebear.com{u}`;
     localStorage.setItem("user", u);
     localStorage.setItem("pass", p);
     localStorage.setItem("avatar", avatar);
-
     alert("Account created");
     showPage('loginPage');
 }
 
 function login() {
-    if (loginUser.value === localStorage.getItem("user") &&
-        loginPass.value === localStorage.getItem("pass")) {
-
-        profileName.innerText = loginUser.value;
+    if (loginUser.value === localStorage.getItem("user") && loginPass.value === localStorage.getItem("pass")) {
+        profileName.innerText = "@" + loginUser.value;
         nav.style.display = "flex";
         showPage('feedPage');
-
     } else alert("Wrong login");
 }
 
-/* POSTS */
-const fakePosts = [
-    {
-        id: 1,
-        user:"lara",
-        avatar:"https://api.dicebear.com/7.x/avataaars/svg?seed=lara",
-        img:"https://picsum.photos/500/300?random=1",
-        cap:"Beautiful day!",
-        likes:12,
-        comments:[],
-        time: Date.now() - 7200000
-    },
-    {
-        id: 2,
-        user:"omar",
-        avatar:"https://api.dicebear.com/7.x/avataaars/svg?seed=omar",
-        img:"https://picsum.photos/500/300?random=2",
-        cap:"Hello Maspan",
-        likes:5,
-        comments:[],
-        time: Date.now() - 3600000
+/* CHAT LOGIC */
+let chatSubscribed = false;
+
+async function initChat() {
+    const chatBox = document.getElementById("chatBox");
+    
+    // Load existing messages
+    const { data, error } = await _supabase
+        .from('messages')
+        .select('*')
+        .order('created_at', { ascending: true });
+
+    if (data) {
+        chatBox.innerHTML = '';
+        data.forEach(msg => appendMessage(msg));
+        chatBox.scrollTop = chatBox.scrollHeight;
     }
+
+    // Subscribe to realtime updates once
+    if (!chatSubscribed) {
+        _supabase
+            .channel('room1')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                appendMessage(payload.new);
+                chatBox.scrollTop = chatBox.scrollHeight;
+            })
+            .subscribe();
+        chatSubscribed = true;
+    }
+}
+
+function appendMessage(msg) {
+    const chatBox = document.getElementById("chatBox");
+    const isMe = msg.username === localStorage.getItem("user");
+    const msgDiv = document.createElement('div');
+    msgDiv.className = `msg ${isMe ? 'me' : 'them'}`;
+    msgDiv.innerHTML = `<small>${msg.username}</small>${msg.content}`;
+    chatBox.appendChild(msgDiv);
+}
+
+async function sendChatMessage() {
+    const input = document.getElementById("chatInput");
+    const user = localStorage.getItem("user");
+    if (!input.value.trim()) return;
+
+    const { error } = await _supabase.from('messages').insert([
+        { username: user, content: input.value }
+    ]);
+    
+    if (error) console.error(error);
+    input.value = "";
+}
+
+/* POSTS & FEED (Local Storage) */
+const fakePosts = [
+    { id: 1, user:"lara", avatar:"https://dicebear.com", img:"https://picsum.photos", cap:"Beautiful day!", likes:12 },
+    { id: 2, user:"omar", avatar:"https://dicebear.com", img:"https://picsum.photos", cap:"Hello Maspan", likes:5 }
 ];
 
 let userPosts = JSON.parse(localStorage.getItem("posts")) || [];
 
-function savePosts() {
-    localStorage.setItem("posts", JSON.stringify(userPosts));
+function loadPosts() {
+    let box = document.getElementById("posts");
+    box.innerHTML = "";
+    [...userPosts, ...fakePosts].forEach(p => {
+        box.innerHTML += `
+        <div class="post">
+            <div class="info">
+                <img src="${p.avatar}" style="width:30px;height:30px;border-radius:50%; vertical-align:middle;">
+                <span class="username">@${p.user}</span>
+            </div>
+            <img src="${p.img}">
+            <div class="info">❤️ ${p.likes} likes<br>${p.cap}</div>
+        </div>`;
+    });
 }
 
-function getAllPosts() {
-    return [...userPosts, ...fakePosts];
-}
-
-/* ADD POST */
 function addPost() {
     let file = postFile.files[0];
     let cap = postCaption.value;
-    let user = localStorage.getItem("user");
-
     if (!file || !cap) return alert("Pick image + caption");
 
     let reader = new FileReader();
     reader.onload = function(e) {
-
         userPosts.unshift({
             id: Date.now(),
-            user: user,
+            user: localStorage.getItem("user"),
             avatar: localStorage.getItem("avatar"),
             img: e.target.result,
             cap: cap,
-            likes: 0,
-            comments: [],
-            time: Date.now()
+            likes: 0
         });
-
-        savePosts();
-
+        localStorage.setItem("posts", JSON.stringify(userPosts));
         postCaption.value = "";
         postFile.value = "";
-
         showPage('feedPage');
     };
-
     reader.readAsDataURL(file);
 }
 
-/* FEED */
-function loadPosts() {
-    let box = document.getElementById("posts");
-    box.innerHTML = "";
-
-    getAllPosts().forEach(p => {
-        box.innerHTML += `
-        <div class="post">
-            <div class="info">
-                <img src="${p.avatar}" style="width:30px;height:30px;border-radius:50%;">
-                <span class="username">@${p.user}</span>
-            </div>
-
-            <img src="${p.img}">
-
-            <div class="info">
-                ❤️ ${p.likes} likes
-                <br><br>
-                ${p.cap}
-            </div>
-        </div>`;
-    });
-}
-
-/* PROFILE */
 function loadMyPosts() {
     let me = localStorage.getItem("user");
     let box = document.getElementById("myPosts");
     box.innerHTML = "";
-
-    userPosts.filter(p => p.user === me).forEach(p => {
-        box.innerHTML += `
-        <div class="post">
-            <img src="${p.img}">
-            <div class="info">${p.cap}</div>
-        </div>`;
+userPosts.filter(p => p.user === me).forEach(p => {
+        box.innerHTML += `<div class="post"><img src="${p.img}"><div class="info">${p.cap}</div></div>`;
     });
 }
-
 </script>
-
 </body>
 </html>
